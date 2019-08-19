@@ -141,7 +141,7 @@ class Weibo(object):
                 if wb_content:
                     weibo_content = wb_content
             return {'overview': weibo_content, 'origin': weibo_content,
-                    'original_user': '', 'retweet_reason': ''}
+                    'original_user': u'原创', 'retweet_reason': ''}
         except Exception as e:
             print('Error: ', e)
             traceback.print_exc()
@@ -173,7 +173,7 @@ class Weibo(object):
                     if weibo_content:
                         wb_content = weibo_content
             else:
-                original_user = ''
+                original_user = u'已删除'
                 wb_content = u'转发微博已被删除'
             retweet_reason = self.deal_garbled(info.xpath('div')[-1])
             retweet_reason = retweet_reason[:retweet_reason.rindex(u'赞')]
