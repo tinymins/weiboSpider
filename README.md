@@ -70,7 +70,8 @@ $ git clone https://github.com/dataabc/weibospider.git
 pip install -r requirements.txt
 ```
 ## 3.设置cookie和user_id
-打开weibospider文件夹下的"**weibospider.py**"文件，将"**your cookie**"替换成爬虫微博的cookie，后面会详细讲解如何获取cookie；将**user_id**替换成想要爬取的微博的user_id，后面会详细讲解如何获取user_id;
+创建 config.json 文件，可从配置模板 config.json.tpl 文件复制创建。
+打开 config.json 文件，将"**your cookie**"替换成爬虫微博的cookie，后面会详细讲解如何获取cookie；将**user_id**替换成想要爬取的微博的user_id，后面会详细讲解如何获取user_id;
 ## 4.运行脚本
 大家可以根据自己的运行环境选择运行方式，Linux可以通过
 ```bash
@@ -94,7 +95,7 @@ user_id可以改成任意合法的用户id（爬虫的微博id除外）；filter
 **wb.followers**：粉丝数；<br>
 **wb.weibo**：除不包含上述信息外，wb.weibo包含爬取到的所有微博信息，如**微博id**、**微博正文**、**原始图片url**、**发布位置**、**发布时间**、**发布工具**、**点赞数**、**转发数**、**评论数**等。如果爬的是全部微博(原创+转发)，除上述信息之外，还包含被**转发微博原始图片url**、**是否为原创微博**等。wb.weibo是一个列表，包含了爬取的所有微博信息。wb.weibo[0]为爬取的第一条微博，wb.weibo[1]为爬取的第二条微博，以此类推。当filter=1时，wb.weibo[0]为爬取的第一条**原创**微博，以此类推。wb.weibo[0]['id']为第一条微博的id，wb.weibo[0]['content']为第一条微博的正文，wb.weibo[0]['publish_time']为第一条微博的发布时间，还有其它很多信息不在赘述，大家可以点击下面的"详情"查看具体用法。
 <details>
-  
+
 <summary>详情</summary>
 
 若目标微博用户存在微博，则：<br>
@@ -130,5 +131,4 @@ user_id可以改成任意合法的用户id（爬虫的微博id除外）；filter
 事实上，此微博的user_id也包含在用户主页(<https://weibo.cn/u/1669879400?f=search_0>)中，之所以我们还要点击主页中的"资料"来获取user_id，是因为很多用户的主页不是"<https://weibo.cn/user_id?f=search_0>"的形式，而是"<https://weibo.cn/个性域名?f=search_0>"或"<https://weibo.cn/微号?f=search_0>"的形式。其中"微号"和user_id都是一串数字，如果仅仅通过主页地址提取user_id，很容易将"微号"误认为user_id。
 
 # 注意事项
-1.user_id不能为爬虫微博的user_id。因为要爬微博信息，必须先登录到某个微博账号，此账号我们姑且称为爬虫微博。爬虫微博访问自己的页面和访问其他用户的页面，得到的网页格式不同，所以无法爬取自己的微博信息；<br>
-2.cookie有期限限制，超过有效期需重新更新cookie。
+1.cookie有期限限制，超过有效期需重新更新cookie。
