@@ -20,12 +20,8 @@ from tqdm import tqdm
 
 DEBUG=True
 
-def write_log(*args):
-    if DEBUG:
-        print(*args)
-
 class Weibo(object):
-    def __init__(self, user_id, only_original=0, pic_download=0, video_download=0, cookie=''):
+    def __init__(self, user_id, only_original=0, pic_download=0, video_download=0, cookie='', debug=False):
         """Weibo类初始化"""
         if not isinstance(user_id, int):
             sys.exit(u'user_id值应为一串数字形式,请重新输入')
@@ -40,12 +36,17 @@ class Weibo(object):
         self.pic_download = pic_download  # 取值范围为0、1,程序默认值为0,代表不下载微博原始图片,1代表下载
         self.video_download = video_download  # 取值范围为0、1,程序默认为0,代表不下载微博视频,1代表下载
         self.cookie = {'Cookie': cookie}  # 抓取时的cookie信息
+        self.debug = debug  # 是否输出测试内容
         self.nickname = ''  # 用户昵称,如“Dear-迪丽热巴”
         self.weibo_num = 0  # 用户全部微博数
         self.got_num = 0  # 爬取到的微博数
         self.following = 0  # 用户关注数
         self.followers = 0  # 用户粉丝数
         self.weibo = []  # 存储爬取到的所有微博信息
+
+    def write_log(self, *args):
+        if self.debug:
+            print(*args)
 
     def deal_html(self, url):
         """处理html"""
@@ -198,7 +199,7 @@ class Weibo(object):
                 weibo_content = self.get_original_weibo(info, weibo_id)
             else:
                 weibo_content = self.get_retweet(info, weibo_id)
-            write_log(weibo_content)
+            self.write_log(weibo_content)
             return weibo_content
         except Exception as e:
             print('Error: ', e)
@@ -224,7 +225,7 @@ class Weibo(object):
                                 publish_place = u'无'
                         publish_place = self.deal_garbled(publish_place)
                         break
-            write_log(u'微博发布位置: ' + publish_place)
+            self.write_log(u'微博发布位置: ' + publish_place)
             return publish_place
         except Exception as e:
             print('Error: ', e)
@@ -255,7 +256,7 @@ class Weibo(object):
                 publish_time = year + '-' + month + '-' + day + ' ' + time
             else:
                 publish_time = publish_time[:16]
-            write_log(u'微博发布时间: ' + publish_time)
+            self.write_log(u'微博发布时间: ' + publish_time)
             return publish_time
         except Exception as e:
             print('Error: ', e)
@@ -270,7 +271,7 @@ class Weibo(object):
                 publish_tool = str_time.split(u'来自')[1]
             else:
                 publish_tool = u'无'
-            write_log(u'微博发布工具: ' + publish_tool)
+            self.write_log(u'微博发布工具: ' + publish_tool)
             return publish_tool
         except Exception as e:
             print('Error: ', e)
@@ -287,15 +288,15 @@ class Weibo(object):
             weibo_footer = re.findall(pattern, str_footer, re.M)
 
             up_num = int(weibo_footer[0])
-            write_log(u'点赞数: ' + str(up_num))
+            self.write_log(u'点赞数: ' + str(up_num))
             footer['up_num'] = up_num
 
             retweet_num = int(weibo_footer[1])
-            write_log(u'转发数: ' + str(retweet_num))
+            self.write_log(u'转发数: ' + str(retweet_num))
             footer['retweet_num'] = retweet_num
 
             comment_num = int(weibo_footer[2])
-            write_log(u'评论数: ' + str(comment_num))
+            self.write_log(u'评论数: ' + str(comment_num))
             footer['comment_num'] = comment_num
             return footer
         except Exception as e:
@@ -494,7 +495,7 @@ class Weibo(object):
                     if weibo:
                         self.weibo.append(weibo)
                         self.got_num += 1
-                        write_log('-' * 100)
+                        self.write_log('-' * 100)
         except Exception as e:
             print('Error: ', e)
             traceback.print_exc()
