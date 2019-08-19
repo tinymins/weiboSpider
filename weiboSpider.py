@@ -51,8 +51,19 @@ class Weibo(object):
     def deal_html(self, url):
         """处理html"""
         try:
-            html = requests.get(url, cookies=self.cookie).content
-            selector = etree.HTML(html)
+            wait_time = 0
+            while True:
+                # 通过加入步进等待避免被限制。微博页面访问有速度限制，单位时间超过允许
+                # 最大次数会被系统限制(一段时间后限制会自动解除)，加入步进等待可处理改
+                # 系统限制。默认是每触发一次限制步进10秒，可根据情况增减步进时间
+                response = requests.get(url, cookies=self.cookie)
+                if response.status_code == 418:
+                    wait_time += 10
+                    print(u'错误418：访问超限，等待%d秒后重试 %s' % (wait_time, url))
+                    sleep(wait_time)
+                else:
+                    break
+            selector = etree.HTML(response.content)
             return selector
         except Exception as e:
             print('Error: ', e)
@@ -136,7 +147,7 @@ class Weibo(object):
             weibo_content = weibo_content[:weibo_content.rfind(u'赞')]
             a_text = info.xpath('div//a/text()')
             if u'全文' in a_text:
-                weibo_link = 'https://weibo.cn/comment/' + weibo_id
+                weibo_link = 'https://weibo.cn/comment/' + weibo_id + '?ckAll=1'
                 wb_content = self.get_long_weibo(weibo_link)
                 if wb_content:
                     weibo_content = wb_content
@@ -635,11 +646,7 @@ class Weibo(object):
                     self.write_file(wrote_num)
                     wrote_num = self.got_num
 
-                # 通过加入随机等待避免被限制。爬虫速度过快容易被系统限制(一段时间后限
-                # 制会自动解除)，加入随机等待模拟人的操作，可降低被系统限制的风险。默
-                # 认是每爬取1到5页随机等待6到10秒，如果仍然被限，可适当增加sleep时间
                 if page - page1 == random_pages and page < page_num:
-                    sleep(random.randint(6, 10))
                     page1 = page
                     random_pages = random.randint(1, 5)
 
