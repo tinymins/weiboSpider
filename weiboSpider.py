@@ -695,7 +695,7 @@ def main():
         print(u'关注数: ' + str(wb.following))
         print(u'粉丝数: ' + str(wb.followers))
         if wb.weibo:
-            print(u'最新/置顶 微博为: ' + wb.weibo[0]['content']['overview'])
+            print(u'最新/置顶 微博为: ' + wb.weibo[0]['overview'])
             print(u'最新/置顶 微博位置: ' + wb.weibo[0]['publish_place'])
             print(u'最新/置顶 微博发布时间: ' + wb.weibo[0]['publish_time'])
             print(u'最新/置顶 微博获得赞数: ' + str(wb.weibo[0]['up_num']))
