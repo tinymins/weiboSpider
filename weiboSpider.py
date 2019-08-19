@@ -17,6 +17,11 @@ from lxml import etree
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
+DEBUG=True
+
+def write_log(*args):
+    if DEBUG:
+        print(*args)
 
 class Weibo(object):
     cookie = {'Cookie': 'your cookie'}  # 将your cookie替换成自己的cookie
@@ -193,7 +198,7 @@ class Weibo(object):
                 weibo_content = self.get_original_weibo(info, weibo_id)
             else:
                 weibo_content = self.get_retweet(info, weibo_id)
-            print(weibo_content)
+            write_log(weibo_content)
             return weibo_content
         except Exception as e:
             print('Error: ', e)
@@ -219,7 +224,7 @@ class Weibo(object):
                                 publish_place = u'无'
                         publish_place = self.deal_garbled(publish_place)
                         break
-            print(u'微博发布位置: ' + publish_place)
+            write_log(u'微博发布位置: ' + publish_place)
             return publish_place
         except Exception as e:
             print('Error: ', e)
@@ -250,7 +255,7 @@ class Weibo(object):
                 publish_time = year + '-' + month + '-' + day + ' ' + time
             else:
                 publish_time = publish_time[:16]
-            print(u'微博发布时间: ' + publish_time)
+            write_log(u'微博发布时间: ' + publish_time)
             return publish_time
         except Exception as e:
             print('Error: ', e)
@@ -265,7 +270,7 @@ class Weibo(object):
                 publish_tool = str_time.split(u'来自')[1]
             else:
                 publish_tool = u'无'
-            print(u'微博发布工具: ' + publish_tool)
+            write_log(u'微博发布工具: ' + publish_tool)
             return publish_tool
         except Exception as e:
             print('Error: ', e)
@@ -282,15 +287,15 @@ class Weibo(object):
             weibo_footer = re.findall(pattern, str_footer, re.M)
 
             up_num = int(weibo_footer[0])
-            print(u'点赞数: ' + str(up_num))
+            write_log(u'点赞数: ' + str(up_num))
             footer['up_num'] = up_num
 
             retweet_num = int(weibo_footer[1])
-            print(u'转发数: ' + str(retweet_num))
+            write_log(u'转发数: ' + str(retweet_num))
             footer['retweet_num'] = retweet_num
 
             comment_num = int(weibo_footer[2])
-            print(u'评论数: ' + str(comment_num))
+            write_log(u'评论数: ' + str(comment_num))
             footer['comment_num'] = comment_num
             return footer
         except Exception as e:
@@ -489,7 +494,7 @@ class Weibo(object):
                     if weibo:
                         self.weibo.append(weibo)
                         self.got_num += 1
-                        print('-' * 100)
+                        write_log('-' * 100)
         except Exception as e:
             print('Error: ', e)
             traceback.print_exc()
