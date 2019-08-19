@@ -479,7 +479,7 @@ class Weibo(object):
     def get_one_page(self, page):
         """获取第page页的全部微博"""
         try:
-            url = 'https://weibo.cn/u/%d?page=%d' % (self.user_id, page)
+            url = 'https://weibo.cn/%d/profile?page=%d' % (self.user_id, page)
             selector = self.deal_html(url)
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
@@ -595,7 +595,7 @@ class Weibo(object):
     def get_weibo_info(self):
         """获取微博信息"""
         try:
-            url = 'https://weibo.cn/u/%d' % (self.user_id)
+            url = 'https://weibo.cn/%d/profile' % (self.user_id)
             selector = self.deal_html(url)
             self.get_user_info(selector)  # 获取用户昵称、微博数、关注数、粉丝数
             page_num = self.get_page_num(selector)  # 获取微博总页数
