@@ -3,6 +3,7 @@
 
 import codecs
 import csv
+import json
 import os
 import random
 import re
@@ -24,9 +25,7 @@ def write_log(*args):
         print(*args)
 
 class Weibo(object):
-    cookie = {'Cookie': 'your cookie'}  # 将your cookie替换成自己的cookie
-
-    def __init__(self, user_id, filter=0, pic_download=0, video_download=0):
+    def __init__(self, user_id, filter=0, pic_download=0, video_download=0, cookie=''):
         """Weibo类初始化"""
         if not isinstance(user_id, int):
             sys.exit(u'user_id值应为一串数字形式,请重新输入')
@@ -40,6 +39,7 @@ class Weibo(object):
         self.filter = filter  # 取值范围为0、1,程序默认值为0,代表要爬取用户的全部微博,1代表只爬取用户的原创微博
         self.pic_download = pic_download  # 取值范围为0、1,程序默认值为0,代表不下载微博原始图片,1代表下载
         self.video_download = video_download  # 取值范围为0、1,程序默认为0,代表不下载微博视频,1代表下载
+        self.cookie = {'Cookie': cookie}  # 抓取时的cookie信息
         self.nickname = ''  # 用户昵称,如“Dear-迪丽热巴”
         self.weibo_num = 0  # 用户全部微博数
         self.got_num = 0  # 爬取到的微博数
@@ -649,12 +649,18 @@ class Weibo(object):
 def main():
     try:
         # 使用实例,输入一个用户id，所有信息都会存储在wb实例中
-        user_id = 1669879400  # 可以改成任意合法的用户id（爬虫的微博id除外）
-        filter = 1  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
-        pic_download = 1  # 值为0代表不下载微博原始图片,1代表下载微博原始图片
-        video_download = 1  # 值为0代表不下载微博视频,1代表下载微博视频
-        wb = Weibo(user_id, filter, pic_download,
-                   video_download)  # 调用Weibo类，创建微博实例wb
+        try:
+            with open(os.path.split(os.path.realpath(__file__))[0] + os.sep + 'config.json', 'r') as f:
+                config = json.load(f)
+        except Exception as e:
+            print(u'请正确配置 config.json 文件，可从模板文件 config.json.tpl 创建。')
+            exit()
+        user_id = int(config.get('user_id'))  # 可以改成任意合法的用户id（爬虫的微博id除外）
+        filter = config.get('filter')  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
+        pic_download = config.get('pic_download')  # 值为0代表不下载微博原始图片,1代表下载微博原始图片
+        video_download = config.get('video_download')  # 值为0代表不下载微博视频,1代表下载微博视频
+        cookie = config.get('cookie')  # 抓取时的cookie信息
+        wb = Weibo(user_id, filter, pic_download, video_download, cookie)  # 调用Weibo类，创建微博实例wb
         wb.start()  # 爬取微博信息
         print(u'用户昵称: ' + wb.nickname)
         print(u'全部微博数: ' + str(wb.weibo_num))
