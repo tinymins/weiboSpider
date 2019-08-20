@@ -468,6 +468,7 @@ class Weibo(object):
             is_original = self.is_original(info)
             if (not self.only_original) or is_original:
                 weibo['id'] = info.xpath('@id')[0][2:]
+                weibo['url'] = 'https://weibo.com/' + str(self.user_id) + '/' + weibo['id']
                 content = self.get_weibo_content(info, is_original)  # 微博内容
                 weibo['overview'] = content['overview']  # 微博总览
                 weibo['is_original'] = is_original  # 是否原创微博
@@ -531,7 +532,7 @@ class Weibo(object):
         """将爬取的信息写入csv文件"""
         try:
             result_headers = []
-            result_headers.append('微博id')
+            result_headers.append('微博地址')
             if not self.only_original:
                 result_headers.append('是否为原创微博')
                 result_headers.append('转发内容')
@@ -539,8 +540,8 @@ class Weibo(object):
             result_headers.append('微博正文')
             result_headers.append('原始图片url')
             if not self.only_original:
-                result_headers.append('被转发微博原始图片url')
-            result_headers.append('微博视频url')
+                result_headers.append('被转发微博原始图片地址')
+            result_headers.append('微博视频地址')
             result_headers.append('发布位置')
             result_headers.append('发布时间')
             result_headers.append('发布工具')
@@ -550,7 +551,7 @@ class Weibo(object):
             result_data = []
             for w in self.weibo[wrote_num:]:
                 d = []
-                d.append(w['id'])
+                d.append(w['url'])
                 if not self.only_original:
                     d.append(w['is_original'])
                     d.append(w['retweet_reason'])
