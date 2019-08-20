@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
 import codecs
@@ -40,6 +40,7 @@ class Weibo(object):
         self.__load_config(config, 'only_original', 0, [0, 1], u'only_original值应为0或1,0代表要爬取用户的全部微博,1代表只爬取用户的原创微博,请重新输入')
         self.__load_config(config, 'pic_download', 0, [0, 1], u'pic_download值应为0或1,0代表不下载微博原始图片,1代表下载,请重新输入')
         self.__load_config(config, 'video_download', 0, [0, 1], u'video_download值应为0或1,0代表不下载微博视频,1代表下载,请重新输入')
+        self.__load_config(config, 'order', 0, ['time asc', 'time desc'], u'order值应为time asc或time desc,time asc代表时间升序,time desc代表时间降序,请重新输入')
         self.__load_config(config, 'cookie', '')
         self.__load_config(config, 'debug', False, [True, False], u'debug值应为0或1,0代表关闭测试输出,1代表开启,请重新输入')
         self.user_id = user_id  # 用户id,即需要我们输入的数字,如昵称为"Dear-迪丽热巴"的id为1669879400
@@ -509,8 +510,12 @@ class Weibo(object):
             info = selector.xpath("//div[@class='c']")
             is_exist = info[0].xpath("div/span[@class='ctt']")
             if is_exist:
-                for i in range(0, len(info) - 2):
-                    weibo = self.get_one_weibo(info[i])
+                info_len = len(info) - 2
+                for i in range(0, info_len):
+                    if self.config['order'] == 'time desc':
+                        weibo = self.get_one_weibo(info[i])
+                    else:
+                        weibo = self.get_one_weibo(info[info_len - i - 1])
                     if weibo:
                         self.weibo.append(weibo)
                         self.got_num += 1
@@ -649,7 +654,10 @@ class Weibo(object):
             page1 = 0
             random_pages = random.randint(1, 5)
             for page in tqdm(range(1, page_num + 1), desc=u'进度'):
-                self.get_one_page(page)  # 获取第page页的全部微博
+                if self.config['order'] == 'time desc':
+                    self.get_one_page(page)
+                else:
+                    self.get_one_page(page_num - page)
 
                 if page % 20 == 0:  # 每爬20页写入一次文件
                     self.write_file(wrote_num)

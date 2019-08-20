@@ -4,5 +4,6 @@
   "only_original": true,
   "pic_download": true,
   "video_download": true,
+  "order": "time asc",
   "debug": false
 }
