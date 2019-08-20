@@ -54,21 +54,25 @@ class Weibo(object):
         if self.config['debug']:
             print(*args)
 
+    def request(self, url):
+        wait_time = 0
+        while True:
+            # 通过加入步进等待避免被限制。微博页面访问有速度限制，单位时间超过允许
+            # 最大次数会被系统限制(一段时间后限制会自动解除)，加入步进等待可处理改
+            # 系统限制。默认是每触发一次限制步进10秒，可根据情况增减步进时间
+            response = requests.get(url, cookies={'Cookie': self.config['cookie']})
+            if response.status_code == 418:
+                wait_time += 10
+                print(u'错误418：访问超限，等待%d秒后重试 %s' % (wait_time, url))
+                sleep(wait_time)
+            else:
+                break
+        return response
+
     def deal_html(self, url):
         """处理html"""
         try:
-            wait_time = 0
-            while True:
-                # 通过加入步进等待避免被限制。微博页面访问有速度限制，单位时间超过允许
-                # 最大次数会被系统限制(一段时间后限制会自动解除)，加入步进等待可处理改
-                # 系统限制。默认是每触发一次限制步进10秒，可根据情况增减步进时间
-                response = requests.get(url, cookies={'Cookie': self.config['cookie']})
-                if response.status_code == 418:
-                    wait_time += 10
-                    print(u'错误418：访问超限，等待%d秒后重试 %s' % (wait_time, url))
-                    sleep(wait_time)
-                else:
-                    break
+            response = self.request(url)
             selector = etree.HTML(response.content)
             return selector
         except Exception as e:
@@ -396,7 +400,7 @@ class Weibo(object):
                 if video_link != u'无':
                     video_link = video_link.replace(
                         'm.weibo.cn/s/video/show', 'm.weibo.cn/s/video/object')
-                    wb_info = requests.get(video_link, cookies={'Cookie': self.config['cookie']}).json()
+                    wb_info = self.request(video_link).json()
                     v_url = wb_info['data']['object']['stream'].get(
                         'hd_url')
                     if not v_url:
