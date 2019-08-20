@@ -18,25 +18,31 @@ from lxml import etree
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-DEBUG=True
-
 class Weibo(object):
-    def __init__(self, user_id, only_original=0, pic_download=0, video_download=0, cookie='', debug=False):
+    config = {}
+
+    def __load_config(self, config, key, default_value, presets=None, errmsg=None):
+        if not key in config:
+            self.config[key] = default_value
+        elif presets == None or config[key] in presets:
+            self.config[key] = config[key]
+        elif errmsg != None:
+            sys.exit(errmsg)
+        else:
+            self.config[key] = default_value
+
+    def __init__(self, user_id, config={}):
         """Weibo类初始化"""
         if not isinstance(user_id, int):
             sys.exit(u'user_id值应为一串数字形式,请重新输入')
-        if only_original != 0 and only_original != 1:
-            sys.exit(u'only_original值应为0或1,请重新输入')
-        if pic_download != 0 and pic_download != 1:
-            sys.exit(u'pic_download值应为0或1,请重新输入')
-        if video_download != 0 and video_download != 1:
-            sys.exit(u'video_download值应为0或1,请重新输入')
+        if not isinstance(config, dict):
+            sys.exit(u'config值应为字典形式,请重新输入')
+        self.__load_config(config, 'only_original', 0, [0, 1], u'only_original值应为0或1,0代表要爬取用户的全部微博,1代表只爬取用户的原创微博,请重新输入')
+        self.__load_config(config, 'pic_download', 0, [0, 1], u'pic_download值应为0或1,0代表不下载微博原始图片,1代表下载,请重新输入')
+        self.__load_config(config, 'video_download', 0, [0, 1], u'video_download值应为0或1,0代表不下载微博视频,1代表下载,请重新输入')
+        self.__load_config(config, 'cookie', '')
+        self.__load_config(config, 'debug', False, [True, False], u'debug值应为0或1,0代表关闭测试输出,1代表开启,请重新输入')
         self.user_id = user_id  # 用户id,即需要我们输入的数字,如昵称为"Dear-迪丽热巴"的id为1669879400
-        self.only_original = only_original  # 取值范围为0、1,程序默认值为0,代表要爬取用户的全部微博,1代表只爬取用户的原创微博
-        self.pic_download = pic_download  # 取值范围为0、1,程序默认值为0,代表不下载微博原始图片,1代表下载
-        self.video_download = video_download  # 取值范围为0、1,程序默认为0,代表不下载微博视频,1代表下载
-        self.cookie = {'Cookie': cookie}  # 抓取时的cookie信息
-        self.debug = debug  # 是否输出测试内容
         self.nickname = ''  # 用户昵称,如“Dear-迪丽热巴”
         self.weibo_num = 0  # 用户全部微博数
         self.got_num = 0  # 爬取到的微博数
@@ -45,7 +51,7 @@ class Weibo(object):
         self.weibo = []  # 存储爬取到的所有微博信息
 
     def write_log(self, *args):
-        if self.debug:
+        if self.config['debug']:
             print(*args)
 
     def deal_html(self, url):
@@ -56,7 +62,7 @@ class Weibo(object):
                 # 通过加入步进等待避免被限制。微博页面访问有速度限制，单位时间超过允许
                 # 最大次数会被系统限制(一段时间后限制会自动解除)，加入步进等待可处理改
                 # 系统限制。默认是每触发一次限制步进10秒，可根据情况增减步进时间
-                response = requests.get(url, cookies=self.cookie)
+                response = requests.get(url, cookies={'Cookie': self.config['cookie']})
                 if response.status_code == 418:
                     wait_time += 10
                     print(u'错误418：访问超限，等待%d秒后重试 %s' % (wait_time, url))
@@ -136,9 +142,9 @@ class Weibo(object):
                                        1:wb_content.rfind(wb_time)]
             return weibo_content
         except Exception as e:
-            return u'网络出错'
             print('Error: ', e)
             traceback.print_exc()
+        return u'网络出错'
 
     def get_original_weibo(self, info, weibo_id):
         """获取原创微博"""
@@ -345,9 +351,9 @@ class Weibo(object):
                 picture_urls = u'无'
             return picture_urls
         except Exception as e:
-            return u'无'
             print('Error: ', e)
             traceback.print_exc()
+        return u'无'
 
     def get_picture_urls(self, info, is_original):
         """获取微博原始图片url"""
@@ -377,6 +383,7 @@ class Weibo(object):
     def get_video_url(self, info, is_original):
         """获取微博视频url"""
         try:
+            video_url = u'无'
             if is_original:
                 div_first = info.xpath('div')[0]
                 a_list = div_first.xpath('.//a')
@@ -389,21 +396,18 @@ class Weibo(object):
                 if video_link != u'无':
                     video_link = video_link.replace(
                         'm.weibo.cn/s/video/show', 'm.weibo.cn/s/video/object')
-                    wb_info = requests.get(video_link,
-                                           cookies=self.cookie).json()
-                    video_url = wb_info['data']['object']['stream'].get(
+                    wb_info = requests.get(video_link, cookies={'Cookie': self.config['cookie']}).json()
+                    v_url = wb_info['data']['object']['stream'].get(
                         'hd_url')
-                    if not video_url:
-                        video_url = wb_info['data']['object']['stream']['url']
-                        if not video_url:  # 说明该视频为直播
-                            video_url = u'无'
-            else:
-                video_url = u'无'
+                    if not v_url:
+                        v_url = wb_info['data']['object']['stream']['url']
+                    if v_url:  # 说明该视频不是直播
+                        video_url = v_url
             return video_url
         except Exception as e:
-            return u'无'
             print('Error: ', e)
             traceback.print_exc()
+        return u'无'
 
     def download_one_file(self, url, file_path, type, weibo_id):
         """下载单个文件(图片/视频)"""
@@ -466,7 +470,7 @@ class Weibo(object):
         try:
             weibo = OrderedDict()
             is_original = self.is_original(info)
-            if (not self.only_original) or is_original:
+            if (not self.config['only_original']) or is_original:
                 weibo['id'] = info.xpath('@id')[0][2:]
                 weibo['url'] = 'https://weibo.com/' + str(self.user_id) + '/' + weibo['id']
                 content = self.get_weibo_content(info, is_original)  # 微博内容
@@ -533,13 +537,13 @@ class Weibo(object):
         try:
             result_headers = []
             result_headers.append('微博地址')
-            if not self.only_original:
+            if not self.config['only_original']:
                 result_headers.append('是否为原创微博')
                 result_headers.append('转发内容')
                 result_headers.append('原作者')
             result_headers.append('微博正文')
             result_headers.append('原始图片url')
-            if not self.only_original:
+            if not self.config['only_original']:
                 result_headers.append('被转发微博原始图片地址')
             result_headers.append('微博视频地址')
             result_headers.append('发布位置')
@@ -552,13 +556,13 @@ class Weibo(object):
             for w in self.weibo[wrote_num:]:
                 d = []
                 d.append(w['url'])
-                if not self.only_original:
+                if not self.config['only_original']:
                     d.append(w['is_original'])
                     d.append(w['retweet_reason'])
                     d.append(w['original_user'])
                 d.append(w['content'])
                 d.append(w['original_pictures'])
-                if not self.only_original:
+                if not self.config['only_original']:
                     d.append(w['retweet_pictures'])
                 d.append(w['video_url'])
                 d.append(w['publish_place'])
@@ -597,7 +601,7 @@ class Weibo(object):
         try:
             temp_result = []
             if wrote_num == 0:
-                if self.only_original:
+                if self.config['only_original']:
                     result_header = u'\n\n原创微博内容: \n'
                 else:
                     result_header = u'\n\n微博内容: \n'
@@ -652,7 +656,7 @@ class Weibo(object):
                     random_pages = random.randint(1, 5)
 
             self.write_file(wrote_num)  # 将剩余不足20页的微博写入文件
-            if not self.only_original:
+            if not self.config['only_original']:
                 print(u'共爬取' + str(self.got_num) + u'条微博')
             else:
                 print(u'共爬取' + str(self.got_num) + u'条原创微博')
@@ -666,9 +670,9 @@ class Weibo(object):
             self.get_weibo_info()
             print(u'信息抓取完毕')
             print('*' * 100)
-            if self.pic_download == 1:
+            if self.config['pic_download'] == 1:
                 self.download_files('img')
-            if self.video_download == 1:
+            if self.config['video_download'] == 1:
                 self.download_files('video')
         except Exception as e:
             print('Error: ', e)
@@ -680,16 +684,19 @@ def main():
         # 使用实例,输入一个用户id，所有信息都会存储在wb实例中
         try:
             with open(os.path.split(os.path.realpath(__file__))[0] + os.sep + 'config.json', 'r') as f:
-                config = json.load(f)
+                jconfig = json.load(f)
         except Exception as e:
             print(u'请正确配置 config.json 文件，可从模板文件 config.json.tpl 创建。')
             exit()
-        user_id = int(config.get('user_id'))  # 可以改成任意合法的用户id（爬虫的微博id除外）
-        only_original = config.get('only_original')  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
-        pic_download = config.get('pic_download')  # 值为0代表不下载微博原始图片,1代表下载微博原始图片
-        video_download = config.get('video_download')  # 值为0代表不下载微博视频,1代表下载微博视频
-        cookie = config.get('cookie')  # 抓取时的cookie信息
-        wb = Weibo(user_id, only_original, pic_download, video_download, cookie)  # 调用Weibo类，创建微博实例wb
+        user_id = int(jconfig.get('user_id'))  # 可以改成任意合法的用户id（爬虫的微博id除外）
+        config = {
+            'only_original': jconfig.get('only_original'),  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
+            'pic_download': jconfig.get('pic_download'),  # 值为0代表不下载微博原始图片,1代表下载微博原始图片
+            'video_download': jconfig.get('video_download'),  # 值为0代表不下载微博视频,1代表下载微博视频
+            'cookie': jconfig.get('cookie'),  # 抓取时的cookie信息
+            'order': jconfig.get('order'),  # 抓取时的顺序，time asc表示时间轴升序，time desc表示时间轴降序
+        }
+        wb = Weibo(user_id, config)  # 调用Weibo类，创建微博实例wb
         wb.start()  # 爬取微博信息
         print(u'用户昵称: ' + wb.nickname)
         print(u'全部微博数: ' + str(wb.weibo_num))
