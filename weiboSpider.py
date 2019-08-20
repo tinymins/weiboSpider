@@ -198,7 +198,8 @@ class Weibo(object):
                 original_user = u'已删除'
                 wb_content = u'转发微博已被删除'
             retweet_reason = self.deal_garbled(info.xpath('div')[-1])
-            retweet_reason = retweet_reason[:retweet_reason.rindex(u'赞')]
+            retweet_reason = retweet_reason[retweet_reason.find(':') +
+                                        1:retweet_reason.rindex(u'赞')]
             wb_overview = (retweet_reason + '\n' + u'原始用户: ' + original_user +
                           '\n' + u'转发内容: ' + wb_content)
             return {'overview': wb_overview, 'origin': wb_content,
